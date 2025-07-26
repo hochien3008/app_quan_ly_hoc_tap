@@ -20,7 +20,7 @@ class MyApp extends StatelessWidget {
       title: 'StudyBuddy',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(fontFamily: 'Arial', primarySwatch: Colors.blue),
-      home: const WelcomeScreen(),
+      home: WelcomeScreen(),
     );
   }
 }

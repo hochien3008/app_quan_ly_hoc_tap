@@ -1,267 +1,206 @@
-import 'dart:math';
-
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
-import 'login_screen.dart';
-import 'register_screen.dart';
 
 class WelcomeScreen extends StatelessWidget {
-  const WelcomeScreen({super.key});
+  static const List<Color> mainGradient = [
+    Color(0xFF232526), // dark gray
+    Color(0xFF414345), // blue-gray
+  ];
+  static const Color mainColor = Color(0xFF4FC3F7); // modern blue
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
-      body: Column(
-        children: [
-          const TopWaveHeader(),
-          const SizedBox(height: 24),
-          Text(
-            'Welcome !',
-            style: GoogleFonts.lato(
-              fontSize: 24,
-              fontWeight: FontWeight.w500,
-              color: Colors.lightBlue,
-            ),
-          ),
-          const SizedBox(height: 32),
-          _buildGradientButton(
-            text: 'Create Account',
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const RegisterScreen()),
-              );
-            },
-          ),
-          const SizedBox(height: 16),
-          _buildOutlinedButton(
-            text: 'Login',
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const LoginScreen()),
-              );
-            },
-          ),
-          const SizedBox(height: 32),
-          _buildSocialIcons(),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildGradientButton({
-    required String text,
-    required VoidCallback onTap,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 48),
-      child: InkWell(
-        onTap: onTap,
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 14),
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [Color(0xFF6D5DF6), Color(0xFF52B6F4)],
-              begin: Alignment.centerLeft,
-              end: Alignment.centerRight,
-            ),
-            borderRadius: BorderRadius.circular(30),
-          ),
-          child: Center(
-            child: Text(
-              text,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildOutlinedButton({
-    required String text,
-    required VoidCallback onTap,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 48),
-      child: OutlinedButton(
-        onPressed: onTap,
-        style: OutlinedButton.styleFrom(
-          side: const BorderSide(color: Color(0xFF6D5DF6), width: 2),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(30),
-          ),
-          minimumSize: const Size.fromHeight(48),
-        ),
-        child: Text(
-          text,
-          style: const TextStyle(
-            color: Color(0xFF6D5DF6),
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSocialIcons() {
-    const iconSize = 32.0;
-    const spacing = 16.0;
-    return Column(
-      children: [
-        const SizedBox(height: 8),
-        const Text(
-          "Sign in with another account",
-          style: TextStyle(color: Colors.grey, fontSize: 12),
-        ),
-        const SizedBox(height: 8),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: const [
-            Icon(
-              Icons.alternate_email,
-              color: Color(0xFF6D5DF6),
-              size: iconSize,
-            ),
-            SizedBox(width: spacing),
-            Icon(Icons.business, color: Color(0xFF6D5DF6), size: iconSize),
-            SizedBox(width: spacing),
-            Icon(Icons.facebook, color: Color(0xFF6D5DF6), size: iconSize),
-            SizedBox(width: spacing),
-            Icon(Icons.g_mobiledata, color: Color(0xFF6D5DF6), size: iconSize),
-          ],
-        ),
-      ],
-    );
-  }
-}
-
-class TopWaveHeader extends StatefulWidget {
-  const TopWaveHeader({super.key});
-
-  @override
-  State<TopWaveHeader> createState() => _TopWaveHeaderState();
-}
-
-class _TopWaveHeaderState extends State<TopWaveHeader>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 4),
-    )..repeat(); // chạy lặp
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      height: 380,
-      child: AnimatedBuilder(
-        animation: _controller,
-        builder: (context, child) {
-          return Stack(
-            children: [
-              _buildWaveLayer(
-                SmoothWaveClipper(_controller.value),
-                340,
-                1.0,
-                child: Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Image.asset('assets/icons/logo.png', height: 128),
-                      const SizedBox(height: 6),
-                      const Text(
-                        'MCG',
-                        style: TextStyle(
-                          fontSize: 28,
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: 2,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          );
-        },
-      ),
-    );
-  }
-
-  Widget _buildWaveLayer(
-    CustomClipper<Path> clipper,
-    double height,
-    double opacity, {
-    Widget? child,
-  }) {
-    return ClipPath(
-      clipper: clipper,
-      child: Container(
-        height: height,
-        decoration: BoxDecoration(
+      body: Container(
+        decoration: const BoxDecoration(
           gradient: LinearGradient(
-            colors: [
-              const Color.fromARGB(255, 126, 113, 243).withOpacity(opacity),
-              const Color.fromARGB(255, 100, 192, 248).withOpacity(opacity),
-            ],
+            colors: mainGradient,
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
         ),
-        child: child,
+        child: SafeArea(
+          child: Center(
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  // Logo with glow effect
+                  Container(
+                    width: 130,
+                    height: 130,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: RadialGradient(
+                        colors: [
+                          mainColor.withOpacity(0.25),
+                          Colors.transparent,
+                        ],
+                        radius: 0.8,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: mainColor.withOpacity(0.5),
+                          blurRadius: 32,
+                          spreadRadius: 4,
+                        ),
+                      ],
+                    ),
+                    child: Center(
+                      child: Image.asset(
+                        'assets/icons/logo.png',
+                        width: 200, // logo lớn hơn vòng tròn
+                        height: 200, // logo lớn hơn vòng tròn
+                        fit: BoxFit.contain,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  // App name
+                  Text(
+                    "MChn Learn",
+                    style: TextStyle(
+                      fontSize: 32,
+                      fontWeight: FontWeight.bold,
+                      color: mainColor,
+                      letterSpacing: 1.5,
+                      shadows: [
+                        Shadow(
+                          color: mainColor.withOpacity(0.5),
+                          blurRadius: 16,
+                          offset: Offset(0, 0),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  // Welcome text
+                  Text(
+                    "Welcome!",
+                    style: TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                      shadows: [
+                        Shadow(
+                          color: Colors.black12,
+                          blurRadius: 2,
+                          offset: Offset(0, 1),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 36),
+                  // Create Account Button
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 36),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [mainColor, Color(0xFF185a9d)],
+                          begin: Alignment.centerLeft,
+                          end: Alignment.centerRight,
+                        ),
+                        borderRadius: BorderRadius.circular(32),
+                        boxShadow: [
+                          BoxShadow(
+                            color: mainColor.withOpacity(0.25),
+                            blurRadius: 12,
+                            offset: const Offset(0, 6),
+                          ),
+                        ],
+                      ),
+                      child: ElevatedButton(
+                        onPressed: () {},
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.transparent,
+                          shadowColor: Colors.transparent,
+                          minimumSize: const Size.fromHeight(54),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(32),
+                          ),
+                          textStyle: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        child: const Text(
+                          "Create Account",
+                          style: TextStyle(color: Colors.white),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 18),
+                  // Login Button
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 36),
+                    child: OutlinedButton(
+                      onPressed: () {},
+                      style: OutlinedButton.styleFrom(
+                        minimumSize: const Size.fromHeight(54),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(32),
+                        ),
+                        side: const BorderSide(color: mainColor, width: 2),
+                        foregroundColor: mainColor,
+                        textStyle: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        backgroundColor: Colors.white,
+                      ),
+                      child: const Text(
+                        "Login",
+                        style: TextStyle(color: mainColor),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 32),
+                  // Social login text
+                  Text(
+                    "Or sign in with",
+                    style: TextStyle(
+                      color: Colors.white.withOpacity(0.92),
+                      fontSize: 15,
+                    ),
+                  ),
+                  const SizedBox(height: 18),
+                  // Social icons
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      _buildSocialIcon(Icons.email, mainColor),
+                      const SizedBox(width: 22),
+                      _buildSocialIcon(Icons.business, mainColor),
+                      const SizedBox(width: 22),
+                      _buildSocialIcon(Icons.facebook, Color(0xFF4267B2)),
+                      const SizedBox(width: 22),
+                      _buildSocialIcon(Icons.g_mobiledata, Color(0xFFEA4335)),
+                    ],
+                  ),
+                  const SizedBox(height: 36),
+                ],
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }
-}
 
-class SmoothWaveClipper extends CustomClipper<Path> {
-  final double animationValue;
-
-  SmoothWaveClipper(this.animationValue);
-
-  @override
-  Path getClip(Size size) {
-    final path = Path();
-
-    // Biên độ dao động từ 10 -> 30 theo animation
-    double waveHeight = 6 + sin(animationValue * 2 * pi) * 3;
-
-    double waveLength = 6 * pi; // Nhiều sóng hơn
-
-    path.lineTo(0, size.height - waveHeight);
-
-    for (double i = 0; i <= size.width; i++) {
-      double y =
-          sin((i / size.width * waveLength) + (animationValue * 2 * pi)) *
-              waveHeight +
-          (size.height - waveHeight);
-      path.lineTo(i, y);
-    }
-
-    path.lineTo(size.width, 0);
-    path.close();
-    return path;
+  static Widget _buildSocialIcon(IconData icon, Color color) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(30),
+      onTap: () {},
+      child: Container(
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: Colors.white.withOpacity(0.85),
+          border: Border.all(color: color.withOpacity(0.18), width: 1.5),
+        ),
+        padding: const EdgeInsets.all(14),
+        child: Icon(icon, color: color, size: 28),
+      ),
+    );
   }
-
-  @override
-  bool shouldReclip(covariant CustomClipper<Path> oldClipper) => true;
 }

@@ -1,6 +1,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <application
-        android:label="quan_ly_hoc_tap"
+        android:label="MChn Learn"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity
