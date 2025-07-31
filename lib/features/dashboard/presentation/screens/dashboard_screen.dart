@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../schedule/domain/schedule_model.dart';
 import '../../../../shared/widgets/custom_appbar.dart';
+import '../../../../routes/route_names.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({Key? key}) : super(key: key);
@@ -154,7 +155,7 @@ class _DashboardScreenState extends State<DashboardScreen>
                   padding: const EdgeInsets.only(right: 16),
                   child: GestureDetector(
                     onTap: () {
-                      Navigator.of(context).pushNamed('/profile');
+                      Navigator.of(context).pushNamed(RouteNames.profile);
                     },
                     child: CircleAvatar(
                       radius: 18,

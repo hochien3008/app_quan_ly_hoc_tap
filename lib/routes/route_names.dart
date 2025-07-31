@@ -5,6 +5,7 @@ class RouteNames {
   static const String register = '/register';
 
   // Main app routes
+  static const String main = '/main';
   static const String dashboard = '/dashboard';
   static const String schedule = '/schedule';
   static const String study = '/study';

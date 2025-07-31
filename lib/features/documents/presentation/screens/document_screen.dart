@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../shared/widgets/custom_appbar.dart';
+import '../../../../routes/route_names.dart';
 
 class DocumentScreen extends StatefulWidget {
   const DocumentScreen({super.key});
@@ -164,7 +165,7 @@ class _DocumentScreenState extends State<DocumentScreen>
                   padding: const EdgeInsets.only(right: 16),
                   child: GestureDetector(
                     onTap: () {
-                      Navigator.of(context).pushNamed('/profile');
+                      Navigator.of(context).pushNamed(RouteNames.profile);
                     },
                     child: CircleAvatar(
                       radius: 18,

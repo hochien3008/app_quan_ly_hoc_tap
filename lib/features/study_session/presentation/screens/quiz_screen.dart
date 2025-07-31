@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:quan_ly_hoc_tap/shared/widgets/custom_appbar.dart';
+import 'package:flutter/foundation.dart';
+import '../../../../core/services/firebase_data_service.dart';
 
 class QuizScreen extends StatefulWidget {
   const QuizScreen({Key? key}) : super(key: key);
@@ -21,6 +22,7 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
   int _totalQuestions = 10;
   int _timeRemaining = 300; // 5 minutes
   bool _isTimerRunning = false;
+  Map<int, int> _userAnswers = {}; // question index -> selected answer
 
   final List<Map<String, dynamic>> _questions = [
     {
@@ -122,6 +124,10 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
 
   void _answerQuestion(int selectedOption) {
     if (!mounted) return;
+
+    // Save user's answer
+    _userAnswers[_currentQuestionIndex] = selectedOption;
+
     if (selectedOption == _questions[_currentQuestionIndex]['correct']) {
       _correctAnswers++;
     }
@@ -143,6 +149,42 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
       _isQuizCompleted = true;
       _isTimerRunning = false;
     });
+
+    // Save quiz result to Firebase if user is authenticated
+    if (FirebaseDataService().isAuthenticated) {
+      _saveQuizResultToFirebase();
+    }
+  }
+
+  // Save quiz result to Firebase
+  Future<void> _saveQuizResultToFirebase() async {
+    try {
+      final questions =
+          _questions.asMap().entries.map((entry) {
+            final index = entry.key;
+            final question = entry.value;
+            return {
+              'question': question['question'],
+              'userAnswer': _userAnswers[index] ?? -1,
+              'correctAnswer': question['correct'],
+              'isCorrect': _userAnswers[index] == question['correct'],
+            };
+          }).toList();
+
+      await FirebaseDataService().saveQuizResult(
+        title: 'General Knowledge Quiz',
+        subject: 'General',
+        totalQuestions: _questions.length,
+        correctAnswers: _correctAnswers,
+        timeSpent: 300 - _timeRemaining, // Time spent in seconds
+        score: (_correctAnswers / _questions.length) * 100,
+        questions: questions,
+      );
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error saving quiz result to Firebase: $e');
+      }
+    }
   }
 
   void _resetQuiz() {
@@ -154,6 +196,7 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
       _correctAnswers = 0;
       _timeRemaining = 300;
       _isTimerRunning = false;
+      _userAnswers.clear();
     });
     _slideController.reset();
   }
