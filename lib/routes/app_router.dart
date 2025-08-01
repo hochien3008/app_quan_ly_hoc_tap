@@ -8,6 +8,7 @@ import 'package:quan_ly_hoc_tap/features/groups/presentation/screens/group_list_
 import 'package:quan_ly_hoc_tap/features/profile/presentation/screens/profile_screen.dart';
 import 'package:quan_ly_hoc_tap/features/schedule/presentation/screens/smart_timetable_screen.dart';
 import 'package:quan_ly_hoc_tap/features/dashboard/presentation/screens/dashboard_screen.dart';
+import 'package:quan_ly_hoc_tap/features/dashboard/presentation/screens/main_screen.dart';
 import 'package:quan_ly_hoc_tap/features/study_session/presentation/screens/pomodoro_screen.dart';
 import 'route_names.dart';
 
@@ -22,6 +23,9 @@ class AppRouter {
 
       case RouteNames.register:
         return MaterialPageRoute(builder: (_) => const RegisterScreen());
+
+      case RouteNames.main:
+        return MaterialPageRoute(builder: (_) => const MainScreen());
 
       case RouteNames.dashboard:
         return MaterialPageRoute(builder: (_) => const DashboardScreen());

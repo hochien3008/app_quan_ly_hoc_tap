@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:quan_ly_hoc_tap/shared/widgets/custom_appbar.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({Key? key}) : super(key: key);
