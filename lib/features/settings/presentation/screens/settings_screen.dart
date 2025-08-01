@@ -189,12 +189,16 @@ class _SettingsScreenState extends State<SettingsScreen>
             expandedHeight: 120,
             floating: false,
             pinned: true,
+            automaticallyImplyLeading: false,
             flexibleSpace: FlexibleSpaceBar(
-              title: const Text(
-                'Settings',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w600,
+              title: Padding(
+                padding: const EdgeInsets.only(left: 32),
+                child: const Text(
+                  'Settings',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
               background: Container(

@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../core/services/firebase_data_service.dart';
+import '../../../../core/services/music_service.dart';
 
 class PomodoroScreen extends StatefulWidget {
   const PomodoroScreen({super.key});
@@ -34,13 +35,8 @@ class _PomodoroScreenState extends State<PomodoroScreen>
   int _longBreakTimeMinutes = 15;
   int _sessionsBeforeLongBreak = 4;
 
-  final List<Map<String, dynamic>> _musicOptions = [
-    {'name': 'Lo-fi Beats', 'icon': Icons.music_note, 'color': Colors.purple},
-    {'name': 'Nature Sounds', 'icon': Icons.nature, 'color': Colors.green},
-    {'name': 'Classical', 'icon': Icons.piano, 'color': Colors.blue},
-    {'name': 'White Noise', 'icon': Icons.waves, 'color': Colors.grey},
-    {'name': 'Café Ambience', 'icon': Icons.coffee, 'color': Colors.brown},
-  ];
+  final MusicService _musicService = MusicService();
+  List<Map<String, dynamic>> _musicOptions = [];
 
   String _selectedMusic = 'Lo-fi Beats';
 
@@ -68,12 +64,16 @@ class _PomodoroScreenState extends State<PomodoroScreen>
 
     // Load saved settings
     _loadSettings();
+
+    // Initialize music options
+    _initializeMusicOptions();
   }
 
   @override
   void dispose() {
     _pulseController.dispose();
     _fadeController.dispose();
+    _musicService.dispose();
     super.dispose();
   }
 
@@ -431,41 +431,159 @@ class _PomodoroScreenState extends State<PomodoroScreen>
     }
   }
 
-  void _playMusic() {
+  void _playMusic() async {
     if (!_isMusicPlaying) {
       setState(() {
         _isMusicPlaying = true;
       });
       HapticFeedback.lightImpact();
+
+      await _musicService.playMusic(_selectedMusic);
     }
   }
 
-  void _pauseMusic() {
+  void _pauseMusic() async {
     if (_isMusicPlaying) {
       setState(() {
         _isMusicPlaying = false;
       });
+      await _musicService.pauseMusic();
     }
   }
 
-  void _resumeMusic() {
+  void _resumeMusic() async {
     if (!_isMusicPlaying) {
       setState(() {
         _isMusicPlaying = true;
       });
+      await _musicService.resumeMusic();
     }
   }
 
-  void _stopMusic() {
+  void _stopMusic() async {
     setState(() {
       _isMusicPlaying = false;
     });
+    await _musicService.stopMusic();
   }
 
-  void _selectMusic(String musicName) {
+  void _initializeMusicOptions() {
+    setState(() {
+      _musicOptions =
+          _musicService.allMusic.map((music) {
+            return {
+              'name': music['name'],
+              'icon': _getIconFromString(music['icon']),
+              'color': _getColorFromString(music['color']),
+              'type': music['type'],
+            };
+          }).toList();
+    });
+  }
+
+  IconData _getIconFromString(String iconString) {
+    switch (iconString) {
+      case '🎵':
+        return Icons.music_note;
+      case '🌿':
+        return Icons.nature;
+      case '🎹':
+        return Icons.piano;
+      case '🌊':
+        return Icons.waves;
+      case '☕':
+        return Icons.coffee;
+      default:
+        return Icons.music_note;
+    }
+  }
+
+  Color _getColorFromString(String colorString) {
+    switch (colorString) {
+      case 'purple':
+        return Colors.purple;
+      case 'green':
+        return Colors.green;
+      case 'blue':
+        return Colors.blue;
+      case 'grey':
+        return Colors.grey;
+      case 'brown':
+        return Colors.brown;
+      case 'orange':
+        return Colors.orange;
+      default:
+        return Colors.purple;
+    }
+  }
+
+  // Thêm nhạc từ thiết bị
+  Future<void> _addCustomMusic() async {
+    final success = await _musicService.addCustomMusic();
+    if (success) {
+      // Cập nhật danh sách nhạc
+      _initializeMusicOptions();
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('✅ Đã thêm nhạc thành công!'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('❌ Không thể thêm nhạc'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  // Xóa nhạc từ thiết bị
+  void _removeCustomMusic(String musicName) {
+    _musicService.removeCustomMusic(musicName);
+    _initializeMusicOptions();
+
+    // Nếu nhạc bị xóa đang được chọn, chuyển về nhạc mặc định
+    if (_selectedMusic == musicName) {
+      _selectedMusic = 'Lo-fi Beats';
+      _saveSettings();
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('🗑️ Đã xóa $musicName'),
+        backgroundColor: Colors.orange,
+      ),
+    );
+  }
+
+  void _selectMusic(String musicName) async {
     setState(() {
       _selectedMusic = musicName;
     });
+
+    // Nếu đang phát nhạc, chuyển sang nhạc mới
+    if (_isMusicPlaying) {
+      // Hiển thị thông báo chuyển nhạc
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const Icon(Icons.swap_horiz, color: Colors.white, size: 20),
+              const SizedBox(width: 12),
+              Text('Đang chuyển sang $musicName...'),
+            ],
+          ),
+          duration: const Duration(seconds: 1),
+          backgroundColor: Colors.blue,
+        ),
+      );
+
+      await _musicService.switchMusic(musicName);
+    }
+
     // Lưu cài đặt nhạc
     _saveSettings();
   }
@@ -778,13 +896,17 @@ class _PomodoroScreenState extends State<PomodoroScreen>
               expandedHeight: 120,
               floating: false,
               pinned: true,
+              automaticallyImplyLeading: false,
               flexibleSpace: FlexibleSpaceBar(
-                title: const Text(
-                  'Pomodoro Timer',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 24,
+                title: Padding(
+                  padding: const EdgeInsets.only(left: 32),
+                  child: const Text(
+                    'Pomodoro Timer',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 24,
+                    ),
                   ),
                 ),
                 background: Container(
@@ -1154,6 +1276,7 @@ class _PomodoroScreenState extends State<PomodoroScreen>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Header với switch
           Row(
             children: [
               Icon(
@@ -1162,7 +1285,7 @@ class _PomodoroScreenState extends State<PomodoroScreen>
                 size: 24,
               ),
               const SizedBox(width: 12),
-              Text(
+              const Text(
                 'Background Music',
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
               ),
@@ -1181,15 +1304,52 @@ class _PomodoroScreenState extends State<PomodoroScreen>
             ],
           ),
           const SizedBox(height: 16),
+
+          // Nút thêm nhạc
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: _addCustomMusic,
+              icon: const Icon(Icons.add, size: 20),
+              label: const Text('Thêm nhạc từ thiết bị'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.blue.shade50,
+                foregroundColor: Colors.blue.shade700,
+                elevation: 0,
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  side: BorderSide(color: Colors.blue.shade200),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // Danh sách nhạc
+          Text(
+            'Nhạc có sẵn',
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: Colors.grey.shade700,
+            ),
+          ),
+          const SizedBox(height: 8),
           Wrap(
             spacing: 8,
             runSpacing: 8,
             children:
                 _musicOptions.map((music) {
                   final isSelected = music['name'] == _selectedMusic;
+                  final isCustom = music['type'] == 'custom';
 
                   return GestureDetector(
                     onTap: () => _selectMusic(music['name']),
+                    onLongPress:
+                        isCustom
+                            ? () => _removeCustomMusic(music['name'])
+                            : null,
                     child: Container(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 12,
@@ -1199,7 +1359,7 @@ class _PomodoroScreenState extends State<PomodoroScreen>
                         color:
                             isSelected
                                 ? music['color'].withOpacity(0.2)
-                                : Colors.grey.shade100,
+                                : Colors.grey.shade50,
                         borderRadius: BorderRadius.circular(20),
                         border: Border.all(
                           color:
@@ -1208,32 +1368,72 @@ class _PomodoroScreenState extends State<PomodoroScreen>
                                   : Colors.grey.shade300,
                           width: isSelected ? 2 : 1,
                         ),
+                        boxShadow:
+                            isSelected
+                                ? [
+                                  BoxShadow(
+                                    color: music['color'].withOpacity(0.3),
+                                    blurRadius: 8,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ]
+                                : null,
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Icon(music['icon'], color: music['color'], size: 16),
                           const SizedBox(width: 6),
-                          Text(
-                            music['name'],
-                            style: TextStyle(
-                              color:
-                                  isSelected
-                                      ? music['color']
-                                      : Colors.grey.shade700,
-                              fontWeight:
-                                  isSelected
-                                      ? FontWeight.w600
-                                      : FontWeight.w500,
-                              fontSize: 12,
+                          Flexible(
+                            child: Text(
+                              music['name'],
+                              style: TextStyle(
+                                color:
+                                    isSelected
+                                        ? music['color']
+                                        : Colors.grey.shade700,
+                                fontWeight:
+                                    isSelected
+                                        ? FontWeight.w600
+                                        : FontWeight.w500,
+                                fontSize: 12,
+                              ),
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
+                          const SizedBox(width: 4),
+                          if (isSelected)
+                            Icon(
+                              Icons.check_circle,
+                              size: 14,
+                              color: Colors.green,
+                            ),
+                          if (isCustom)
+                            Icon(
+                              Icons.phone_android,
+                              size: 12,
+                              color: Colors.orange,
+                            ),
                         ],
                       ),
                     ),
                   );
                 }).toList(),
           ),
+
+          // Hướng dẫn
+          if (_musicOptions.any((music) => music['type'] == 'custom'))
+            Padding(
+              padding: const EdgeInsets.only(top: 12),
+              child: Text(
+                '💡 Nhấn giữ để xóa nhạc từ thiết bị',
+                style: TextStyle(
+                  fontSize: 11,
+                  color: Colors.grey.shade600,
+                  fontStyle: FontStyle.italic,
+                ),
+              ),
+            ),
         ],
       ),
     );

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
-import '../../../../shared/widgets/custom_appbar.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../../routes/route_names.dart';
+import '../../domain/schedule_model.dart';
+import '../../data/schedule_repository.dart';
 
 class SmartTimetableScreen extends StatefulWidget {
   const SmartTimetableScreen({super.key});
@@ -15,6 +17,7 @@ class _SmartTimetableScreenState extends State<SmartTimetableScreen>
   late Animation<double> _fadeAnimation;
   String _selectedView = 'Week';
   DateTime _selectedDate = DateTime.now();
+  bool _isLoading = false;
 
   final List<String> _viewOptions = ['Day', 'Week', 'Month'];
   final List<String> _weekDays = [
@@ -27,56 +30,13 @@ class _SmartTimetableScreenState extends State<SmartTimetableScreen>
     'Sun',
   ];
 
-  final List<Map<String, dynamic>> _schedules = [
-    {
-      'id': '1',
-      'title': 'Mathematics',
-      'subject': 'Math',
-      'startTime': '08:00',
-      'endTime': '09:30',
-      'room': 'Room 101',
-      'teacher': 'Dr. Smith',
-      'color': Colors.blue,
-      'isCompleted': false,
-    },
-    {
-      'id': '2',
-      'title': 'Physics Lab',
-      'subject': 'Physics',
-      'startTime': '10:00',
-      'endTime': '11:30',
-      'room': 'Lab 205',
-      'teacher': 'Prof. Johnson',
-      'color': Colors.green,
-      'isCompleted': true,
-    },
-    {
-      'id': '3',
-      'title': 'English Literature',
-      'subject': 'English',
-      'startTime': '13:00',
-      'endTime': '14:30',
-      'room': 'Room 302',
-      'teacher': 'Ms. Davis',
-      'color': Colors.orange,
-      'isCompleted': false,
-    },
-    {
-      'id': '4',
-      'title': 'Chemistry',
-      'subject': 'Chemistry',
-      'startTime': '15:00',
-      'endTime': '16:30',
-      'room': 'Lab 103',
-      'teacher': 'Dr. Wilson',
-      'color': Colors.purple,
-      'isCompleted': false,
-    },
-  ];
+  late ScheduleRepository _scheduleRepository;
+  List<ScheduleModel> _schedules = [];
 
   @override
   void initState() {
     super.initState();
+    _scheduleRepository = ScheduleRepositoryImpl();
     _animationController = AnimationController(
       duration: const Duration(milliseconds: 300),
       vsync: this,
@@ -85,6 +45,51 @@ class _SmartTimetableScreenState extends State<SmartTimetableScreen>
       CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
     );
     _animationController.forward();
+    _loadSchedules();
+  }
+
+  Future<void> _loadSchedules() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final schedules = await _scheduleRepository.getSchedules();
+      setState(() {
+        _schedules = schedules;
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+      });
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error loading schedules: $e')));
+    }
+  }
+
+  Color _getSubjectColor(String subject) {
+    switch (subject.toLowerCase()) {
+      case 'math':
+      case 'mathematics':
+        return Colors.blue;
+      case 'physics':
+        return Colors.green;
+      case 'english':
+      case 'literature':
+        return Colors.orange;
+      case 'chemistry':
+        return Colors.purple;
+      case 'biology':
+        return Colors.teal;
+      case 'history':
+        return Colors.brown;
+      case 'geography':
+        return Colors.indigo;
+      default:
+        return Colors.grey;
+    }
   }
 
   @override
@@ -98,12 +103,40 @@ class _SmartTimetableScreenState extends State<SmartTimetableScreen>
     return Scaffold(
       body: CustomScrollView(
         slivers: [
-          CustomAppBar(
-            title: 'Smart Timetable',
+          SliverAppBar(
+            automaticallyImplyLeading: false,
+            expandedHeight: 120,
+            floating: false,
+            pinned: true,
+            flexibleSpace: FlexibleSpaceBar(
+              title: Padding(
+                padding: const EdgeInsets.only(left: 32),
+                child: const Text(
+                  'Smart Timetable',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 24,
+                  ),
+                ),
+              ),
+              background: Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      Theme.of(context).colorScheme.primary,
+                      Theme.of(context).colorScheme.primary.withOpacity(0.8),
+                    ],
+                  ),
+                ),
+              ),
+            ),
             actions: [
               IconButton(
                 onPressed: () => _showAddScheduleDialog(),
-                icon: const Icon(Icons.add),
+                icon: const Icon(Icons.add, color: Colors.white),
                 tooltip: 'Add Schedule',
               ),
             ],
@@ -197,75 +230,42 @@ class _SmartTimetableScreenState extends State<SmartTimetableScreen>
           color: Theme.of(context).colorScheme.primary.withOpacity(0.2),
         ),
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          IconButton(
-            onPressed: () => _changeDate(-1),
-            icon: const Icon(Icons.chevron_left),
-            style: IconButton.styleFrom(
-              backgroundColor: Colors.white,
-              elevation: 2,
-            ),
+          Text(
+            'Today\'s Schedule',
+            style: Theme.of(
+              context,
+            ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
           ),
-          Expanded(
-            child: Column(
-              children: [
-                Text(
-                  _getFormattedDate(),
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                Text(
-                  _getFormattedDay(),
-                  style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
-                ),
-              ],
+          const SizedBox(height: 16),
+          if (_isLoading)
+            const Center(child: CircularProgressIndicator())
+          else if (_schedules.isEmpty)
+            _buildEmptyState()
+          else
+            ..._getTodaySchedules().map(
+              (schedule) => _buildScheduleCard(schedule),
             ),
-          ),
-          IconButton(
-            onPressed: () => _changeDate(1),
-            icon: const Icon(Icons.chevron_right),
-            style: IconButton.styleFrom(
-              backgroundColor: Colors.white,
-              elevation: 2,
-            ),
-          ),
         ],
       ),
     );
   }
 
-  Widget _buildScheduleList() {
-    final todaySchedules =
-        _schedules.where((schedule) {
-          // Filter schedules for today (simplified logic)
-          return true; // Show all schedules for demo
-        }).toList();
-
-    if (todaySchedules.isEmpty) {
-      return _buildEmptyState();
-    }
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Today\'s Schedule',
-          style: Theme.of(
-            context,
-          ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 16),
-        ...todaySchedules.map((schedule) => _buildScheduleCard(schedule)),
-      ],
-    );
+  List<ScheduleModel> _getTodaySchedules() {
+    final today = DateTime.now();
+    return _schedules.where((schedule) {
+      final scheduleDate = schedule.startTime;
+      return scheduleDate.year == today.year &&
+          scheduleDate.month == today.month &&
+          scheduleDate.day == today.day;
+    }).toList();
   }
 
-  Widget _buildScheduleCard(Map<String, dynamic> schedule) {
-    final isCompleted = schedule['isCompleted'] as bool;
-    final color = schedule['color'] as Color;
+  Widget _buildScheduleCard(ScheduleModel schedule) {
+    final isCompleted = schedule.isCompleted;
+    final color = _getSubjectColor(schedule.subject);
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -311,7 +311,7 @@ class _SmartTimetableScreenState extends State<SmartTimetableScreen>
                         children: [
                           Expanded(
                             child: Text(
-                              schedule['title'],
+                              schedule.title,
                               style: const TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
@@ -341,7 +341,7 @@ class _SmartTimetableScreenState extends State<SmartTimetableScreen>
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        '${schedule['startTime']} - ${schedule['endTime']}',
+                        '${_formatTime(schedule.startTime)} - ${_formatTime(schedule.endTime)}',
                         style: TextStyle(
                           color: Colors.grey.shade600,
                           fontSize: 14,
@@ -353,42 +353,33 @@ class _SmartTimetableScreenState extends State<SmartTimetableScreen>
                           Icon(
                             Icons.location_on,
                             size: 16,
-                            color: Colors.grey.shade600,
+                            color: Colors.grey.shade500,
                           ),
                           const SizedBox(width: 4),
                           Text(
-                            schedule['room'],
+                            schedule.location,
                             style: TextStyle(
-                              color: Colors.grey.shade600,
-                              fontSize: 14,
+                              color: Colors.grey.shade500,
+                              fontSize: 12,
                             ),
                           ),
                           const SizedBox(width: 16),
                           Icon(
                             Icons.person,
                             size: 16,
-                            color: Colors.grey.shade600,
+                            color: Colors.grey.shade500,
                           ),
                           const SizedBox(width: 4),
                           Text(
-                            schedule['teacher'],
+                            schedule.teacher,
                             style: TextStyle(
-                              color: Colors.grey.shade600,
-                              fontSize: 14,
+                              color: Colors.grey.shade500,
+                              fontSize: 12,
                             ),
                           ),
                         ],
                       ),
                     ],
-                  ),
-                ),
-                IconButton(
-                  onPressed: () => _toggleScheduleCompletion(schedule['id']),
-                  icon: Icon(
-                    isCompleted
-                        ? Icons.check_circle
-                        : Icons.radio_button_unchecked,
-                    color: isCompleted ? Colors.green : Colors.grey.shade400,
                   ),
                 ),
               ],
@@ -399,16 +390,16 @@ class _SmartTimetableScreenState extends State<SmartTimetableScreen>
     );
   }
 
+  String _formatTime(DateTime time) {
+    return '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}';
+  }
+
   Widget _buildEmptyState() {
     return Container(
       padding: const EdgeInsets.all(32),
       child: Column(
         children: [
-          Icon(
-            Icons.calendar_today_outlined,
-            size: 64,
-            color: Colors.grey.shade400,
-          ),
+          Icon(Icons.schedule, size: 64, color: Colors.grey.shade400),
           const SizedBox(height: 16),
           Text(
             'No schedules for today',
@@ -421,82 +412,114 @@ class _SmartTimetableScreenState extends State<SmartTimetableScreen>
           const SizedBox(height: 8),
           Text(
             'Add your first schedule to get started',
-            style: TextStyle(color: Colors.grey.shade500),
-          ),
-          const SizedBox(height: 24),
-          ElevatedButton.icon(
-            onPressed: () => _showAddScheduleDialog(),
-            icon: const Icon(Icons.add),
-            label: const Text('Add Schedule'),
-            style: ElevatedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-            ),
+            style: TextStyle(fontSize: 14, color: Colors.grey.shade500),
+            textAlign: TextAlign.center,
           ),
         ],
       ),
     );
   }
 
-  String _getFormattedDate() {
-    return '${_selectedDate.day}/${_selectedDate.month}/${_selectedDate.year}';
+  Widget _buildScheduleList() {
+    if (_selectedView == 'Day') {
+      return _buildDayView();
+    } else if (_selectedView == 'Week') {
+      return _buildWeekView();
+    } else {
+      return _buildMonthView();
+    }
   }
 
-  String _getFormattedDay() {
-    final days = [
-      'Monday',
-      'Tuesday',
-      'Wednesday',
-      'Thursday',
-      'Friday',
-      'Saturday',
-      'Sunday',
-    ];
-    return days[_selectedDate.weekday - 1];
-  }
-
-  void _changeDate(int days) {
-    setState(() {
-      _selectedDate = _selectedDate.add(Duration(days: days));
-    });
-  }
-
-  void _toggleScheduleCompletion(String scheduleId) {
-    setState(() {
-      final schedule = _schedules.firstWhere((s) => s['id'] == scheduleId);
-      schedule['isCompleted'] = !schedule['isCompleted'];
-    });
-  }
-
-  void _showScheduleDetails(Map<String, dynamic> schedule) {
-    showDialog(
-      context: context,
-      builder:
-          (context) => AlertDialog(
-            title: Text(schedule['title']),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Subject: ${schedule['subject']}'),
-                Text('Time: ${schedule['startTime']} - ${schedule['endTime']}'),
-                Text('Room: ${schedule['room']}'),
-                Text('Teacher: ${schedule['teacher']}'),
-              ],
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('Close'),
-              ),
-              TextButton(
-                onPressed: () {
-                  Navigator.pop(context);
-                  // Navigate to edit screen
-                },
-                child: const Text('Edit'),
-              ),
-            ],
+  Widget _buildDayView() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
           ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Day View',
+            style: Theme.of(
+              context,
+            ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 16),
+          // Day view implementation
+          const Text('Day view coming soon...'),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildWeekView() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Week View',
+            style: Theme.of(
+              context,
+            ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 16),
+          // Week view implementation
+          const Text('Week view coming soon...'),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMonthView() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Month View',
+            style: Theme.of(
+              context,
+            ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 16),
+          // Month view implementation
+          const Text('Month view coming soon...'),
+        ],
+      ),
     );
   }
 
@@ -504,16 +527,290 @@ class _SmartTimetableScreenState extends State<SmartTimetableScreen>
     showDialog(
       context: context,
       builder:
-          (context) => AlertDialog(
-            title: const Text('Add New Schedule'),
-            content: const Text('Schedule creation feature coming soon!'),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('OK'),
+          (context) => _AddScheduleDialog(
+            onScheduleAdded: (schedule) {
+              _loadSchedules(); // Reload schedules after adding
+            },
+          ),
+    );
+  }
+
+  void _showScheduleDetails(ScheduleModel schedule) {
+    // TODO: Implement schedule details dialog
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Schedule details for: ${schedule.title}')),
+    );
+  }
+}
+
+class _AddScheduleDialog extends StatefulWidget {
+  final Function(ScheduleModel) onScheduleAdded;
+
+  const _AddScheduleDialog({required this.onScheduleAdded});
+
+  @override
+  State<_AddScheduleDialog> createState() => _AddScheduleDialogState();
+}
+
+class _AddScheduleDialogState extends State<_AddScheduleDialog> {
+  final _formKey = GlobalKey<FormState>();
+  final _titleController = TextEditingController();
+  final _subjectController = TextEditingController();
+  final _locationController = TextEditingController();
+  final _teacherController = TextEditingController();
+
+  DateTime _selectedDate = DateTime.now();
+  TimeOfDay _startTime = TimeOfDay.now();
+  TimeOfDay _endTime = TimeOfDay.now().replacing(
+    hour: TimeOfDay.now().hour + 1,
+  );
+
+  bool _isLoading = false;
+
+  @override
+  void dispose() {
+    _titleController.dispose();
+    _subjectController.dispose();
+    _locationController.dispose();
+    _teacherController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Thêm lịch học mới'),
+      content: SingleChildScrollView(
+        child: Form(
+          key: _formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextFormField(
+                controller: _titleController,
+                decoration: const InputDecoration(
+                  labelText: 'Tên môn học',
+                  border: OutlineInputBorder(),
+                ),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Vui lòng nhập tên môn học';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _subjectController,
+                decoration: const InputDecoration(
+                  labelText: 'Môn học',
+                  border: OutlineInputBorder(),
+                ),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Vui lòng nhập môn học';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _locationController,
+                decoration: const InputDecoration(
+                  labelText: 'Phòng học',
+                  border: OutlineInputBorder(),
+                ),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Vui lòng nhập phòng học';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _teacherController,
+                decoration: const InputDecoration(
+                  labelText: 'Giáo viên',
+                  border: OutlineInputBorder(),
+                ),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Vui lòng nhập tên giáo viên';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Expanded(
+                    child: ListTile(
+                      title: const Text('Ngày'),
+                      subtitle: Text(
+                        '${_selectedDate.day}/${_selectedDate.month}/${_selectedDate.year}',
+                      ),
+                      trailing: const Icon(Icons.calendar_today),
+                      onTap: _selectDate,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Expanded(
+                    child: ListTile(
+                      title: const Text('Giờ bắt đầu'),
+                      subtitle: Text(_startTime.format(context)),
+                      trailing: const Icon(Icons.access_time),
+                      onTap: () => _selectTime(true),
+                    ),
+                  ),
+                  Expanded(
+                    child: ListTile(
+                      title: const Text('Giờ kết thúc'),
+                      subtitle: Text(_endTime.format(context)),
+                      trailing: const Icon(Icons.access_time),
+                      onTap: () => _selectTime(false),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Hủy'),
+        ),
+        ElevatedButton(
+          onPressed: _isLoading ? null : _saveSchedule,
+          child:
+              _isLoading
+                  ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                  : const Text('Lưu'),
+        ),
+      ],
     );
+  }
+
+  Future<void> _selectDate() async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _selectedDate,
+      firstDate: DateTime.now(),
+      lastDate: DateTime.now().add(const Duration(days: 365)),
+    );
+    if (picked != null) {
+      setState(() {
+        _selectedDate = picked;
+      });
+    }
+  }
+
+  Future<void> _selectTime(bool isStart) async {
+    final picked = await showTimePicker(
+      context: context,
+      initialTime: isStart ? _startTime : _endTime,
+    );
+    if (picked != null) {
+      setState(() {
+        if (isStart) {
+          _startTime = picked;
+        } else {
+          _endTime = picked;
+        }
+      });
+    }
+  }
+
+  Future<void> _saveSchedule() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      // Create start and end DateTime
+      final startDateTime = DateTime(
+        _selectedDate.year,
+        _selectedDate.month,
+        _selectedDate.day,
+        _startTime.hour,
+        _startTime.minute,
+      );
+
+      final endDateTime = DateTime(
+        _selectedDate.year,
+        _selectedDate.month,
+        _selectedDate.day,
+        _endTime.hour,
+        _endTime.minute,
+      );
+
+      // Validate time
+      if (endDateTime.isBefore(startDateTime)) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Giờ kết thúc phải sau giờ bắt đầu')),
+        );
+        setState(() {
+          _isLoading = false;
+        });
+        return;
+      }
+
+      final schedule = ScheduleModel(
+        id: '', // Will be generated by Firestore
+        title: _titleController.text.trim(),
+        subject: _subjectController.text.trim(),
+        description: '',
+        startTime: startDateTime,
+        endTime: endDateTime,
+        location: _locationController.text.trim(),
+        teacher: _teacherController.text.trim(),
+        priority: 3,
+        difficulty: 3,
+        isRecurring: false,
+        recurringDays: [],
+        color: '#4FC3F7',
+        isCompleted: false,
+        completedAt: null,
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+      );
+
+      final scheduleRepository = ScheduleRepositoryImpl();
+      final result = await scheduleRepository.createSchedule(schedule);
+
+      if (result == null) {
+        // Success
+        widget.onScheduleAdded(schedule);
+        Navigator.of(context).pop();
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Đã thêm lịch học thành công!')),
+        );
+      } else {
+        // Error
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Lỗi: $result')));
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Lỗi: $e')));
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
   }
 }

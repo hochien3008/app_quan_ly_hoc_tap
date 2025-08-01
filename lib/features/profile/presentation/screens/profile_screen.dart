@@ -3,7 +3,6 @@ import 'package:quan_ly_hoc_tap/features/study_session/presentation/screens/quiz
 import 'package:quan_ly_hoc_tap/features/groups/presentation/screens/group_list_screen.dart';
 import 'package:quan_ly_hoc_tap/features/notifications/presentation/screens/notification_screen.dart';
 import 'package:quan_ly_hoc_tap/features/settings/presentation/screens/settings_screen.dart';
-import '../../../../shared/widgets/custom_appbar.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({Key? key}) : super(key: key);
@@ -114,16 +113,20 @@ class _ProfileScreenState extends State<ProfileScreen>
         child: CustomScrollView(
           slivers: [
             SliverAppBar(
+              automaticallyImplyLeading: false,
               expandedHeight: 120,
               floating: false,
               pinned: true,
               flexibleSpace: FlexibleSpaceBar(
-                title: const Text(
-                  'Profile',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 24,
+                title: Padding(
+                  padding: const EdgeInsets.only(left: 32),
+                  child: const Text(
+                    'Profile',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 24,
+                    ),
                   ),
                 ),
                 background: Container(

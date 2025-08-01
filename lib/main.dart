@@ -10,6 +10,7 @@ import 'package:quan_ly_hoc_tap/core/services/data_sync_service.dart';
 import 'package:quan_ly_hoc_tap/features/auth/presentation/screens/welcome_screen.dart';
 import 'package:quan_ly_hoc_tap/localization/app_localizations.dart';
 import 'package:quan_ly_hoc_tap/routes/app_router.dart';
+import 'package:quan_ly_hoc_tap/routes/route_names.dart';
 import 'package:quan_ly_hoc_tap/core/theme/app_theme.dart';
 import 'package:timezone/data/latest.dart' as tz;
 
@@ -63,7 +64,7 @@ class MyApp extends StatelessWidget {
               GlobalWidgetsLocalizations.delegate,
               GlobalCupertinoLocalizations.delegate,
             ],
-            initialRoute: '/main',
+            initialRoute: RouteNames.welcome,
             onGenerateRoute: AppRouter.generateRoute,
             onUnknownRoute: (settings) {
               return MaterialPageRoute(builder: (context) => WelcomeScreen());

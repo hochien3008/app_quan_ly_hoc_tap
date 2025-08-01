@@ -77,7 +77,10 @@ class _EditscheduleScreenState extends State<EditscheduleScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Thêm buổi học")),
+      appBar: AppBar(
+        title: const Text("Thêm buổi học"),
+        automaticallyImplyLeading: false,
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Form(

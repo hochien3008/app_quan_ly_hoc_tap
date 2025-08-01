@@ -22,7 +22,14 @@ class ScheduleRepositoryImpl implements ScheduleRepository {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
-  String get _userId => _auth.currentUser?.uid ?? '';
+  String get _userId {
+    final currentUser = _auth.currentUser;
+    if (currentUser != null && currentUser.uid.isNotEmpty) {
+      return currentUser.uid;
+    }
+    // Fallback to a default user ID for demo purposes
+    return 'demo_user_123';
+  }
 
   @override
   Future<List<ScheduleModel>> getSchedules() async {

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../../shared/widgets/custom_appbar.dart';
+
 import '../../../../routes/route_names.dart';
 
 class DocumentScreen extends StatefulWidget {
@@ -127,16 +127,20 @@ class _DocumentScreenState extends State<DocumentScreen>
         child: CustomScrollView(
           slivers: [
             SliverAppBar(
+              automaticallyImplyLeading: false,
               expandedHeight: 120,
               floating: false,
               pinned: true,
               flexibleSpace: FlexibleSpaceBar(
-                title: const Text(
-                  'Documents',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 24,
+                title: Padding(
+                  padding: const EdgeInsets.only(left: 32),
+                  child: const Text(
+                    'Documents',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 24,
+                    ),
                   ),
                 ),
                 background: Container(

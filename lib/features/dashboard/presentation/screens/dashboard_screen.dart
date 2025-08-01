@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../schedule/domain/schedule_model.dart';
-import '../../../../shared/widgets/custom_appbar.dart';
+
 import '../../../../routes/route_names.dart';
 
 class DashboardScreen extends StatefulWidget {
@@ -116,16 +116,20 @@ class _DashboardScreenState extends State<DashboardScreen>
         child: CustomScrollView(
           slivers: [
             SliverAppBar(
+              automaticallyImplyLeading: false,
               expandedHeight: 120,
               floating: false,
               pinned: true,
               flexibleSpace: FlexibleSpaceBar(
-                title: const Text(
-                  'StudyMate',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 24,
+                title: Padding(
+                  padding: const EdgeInsets.only(left: 32),
+                  child: const Text(
+                    'StudyMate',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 24,
+                    ),
                   ),
                 ),
                 background: Container(

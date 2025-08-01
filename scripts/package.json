@@ -1,0 +1,21 @@
+{
+  "name": "music-upload-script",
+  "version": "1.0.0",
+  "description": "Script để upload nhạc lên Firebase Storage",
+  "main": "upload_music_to_firebase.js",
+  "scripts": {
+    "upload": "node upload_music_to_firebase.js"
+  },
+  "dependencies": {
+    "firebase-admin": "^12.0.0"
+  },
+  "devDependencies": {},
+  "keywords": [
+    "firebase",
+    "storage",
+    "music",
+    "upload"
+  ],
+  "author": "Your Name",
+  "license": "MIT"
+}

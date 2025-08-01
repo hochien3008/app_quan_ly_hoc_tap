@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:quan_ly_hoc_tap/shared/widgets/custom_appbar.dart';
 
 class GroupListScreen extends StatefulWidget {
   const GroupListScreen({Key? key}) : super(key: key);
@@ -276,15 +275,19 @@ class _GroupListScreenState extends State<GroupListScreen>
       body: CustomScrollView(
         slivers: [
           SliverAppBar(
+            automaticallyImplyLeading: false,
             expandedHeight: 120,
             floating: false,
             pinned: true,
             flexibleSpace: FlexibleSpaceBar(
-              title: const Text(
-                'Study Groups',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w600,
+              title: Padding(
+                padding: const EdgeInsets.only(left: 32),
+                child: const Text(
+                  'Study Groups',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
               background: Container(
